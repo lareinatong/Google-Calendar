@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<head>
+<title>Calendar</title>
+<style type="text/css">
+body{
+	width: 760px; /* how wide to make your web page */
+	background-color: teal; /* what color to make the background */
+	margin: 0 auto;
+	padding: 0;
+	font:12px/16px Verdana, sans-serif; /* default font */
+}
+div#main{
+	background-color: #FFF;
+	margin: 2px;
+	padding: 10px;
+}
+h1{
+	color: teal;
+}
+table {
+	border: 1px solid black;
+	table-layout: fixed;
+}
+th, td {
+	text-align: center;
+	width: 100px;
+    
+}
+td.selected{
+	background: yellow;
+}
+div.content{
+	border: 1px solid black;
+	padding: 5px;
+	border-radius: 10px;
+	text-align: left;
+}
+
+button.newEvent{
+	text-align: right;
+	margin-right: 10px;
+}
+
+textarea.editWindow{
+	width: 300px;
+	height: 60px;
+}
+
+</style>
+<div id="pagehead">
+	<label for="username">User Name: </label>
+	<input type="text" id="username" />
+	<label for="password">Password: </label>
+	<input type="password" id="password"/>
+	<button id="login">Log in</button>
+	<button id="register">Register</button>
+</div>
+    
+</head>
+<body><div id="main">
+	<h1>Super Calendar</h1>
+	<button id="prevmonth">Previous Month</button>
+	<button id="nextmonth">Next Month</button><br><br>
+	<table>
+	    <tr>
+		<th colspan="7" id="monthyear"></th>
+	    </tr>
+	    <tr>
+		<td>Sunday</td>
+		<td>Monday</td>
+		<td>Tuesday</td>
+		<td>Wednesday</td>
+		<td>Thursday</td>
+		<td>Friday</td>
+		<td>Saturday</td>
+	    </tr>
+	    <tr>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+	    </tr>
+	    <tr>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+	    </tr>
+	    <tr>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+	    </tr>
+	    <tr>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+	    </tr>
+	    <tr>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+	    </tr>
+	    <tr>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+		<td name="days"></td>
+	    </tr>
+	</table>
+	<br>
+	<div id="content"></div>
+	<br>
+	<div id="addEventWindow"></div>
+	<script type="text/javascript" src="http://classes.engineering.wustl.edu/cse330/content/calendar.min.js"></script>
+	
+	<script type="text/javascript">
+	    
+	    
+	    //Initialize the calendar
+	    
+		var monthList = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+		var thisDate = new Date();
+		var thisMonth = new Month(thisDate.getFullYear(), thisDate.getMonth());
+		document.getElementById("monthyear").textContent = monthList[thisDate.getMonth()] + " " + thisDate.getFullYear();
+		//Find the first day of the month
+		var firstDate = thisDate.deltaDays(-1 * (thisDate.getDate() - 1));
+		var lastDate = thisMonth.nextMonth().getDateObject(1).deltaDays(-1);
+		var showDate = 1;
+		for (var i = firstDate.getDay(); i < (firstDate.getDay() + lastDate.getDate()); i++){
+			document.getElementsByName("days")[i].textContent = showDate;
+			showDate++;
+		}
+		var userLogin = false;
+		var userLogout = false;
+		var userName = null;
+		var globalSelectedDate = null;
+	
+		/*This function is called when the user wants to view another month, and it will
+		 *display the view of either the next or the previous month of the current one
+		 */
+		function updateCalendar(){
+			//Clear the current calendar
+			cleanSelected();
+			removeContent();
+			for (var i = 0; i < document.getElementsByName("days").length; i++){
+				document.getElementsByName("days")[i].textContent = "";
+			}
+			
+			//Find the first day of the month and start putting the numbers in the calendar
+			for (var i = 0; i < 7; i++){
+				if (thisMonth.getWeeks()[0].getDates()[i].getDate() == 1) {
+					firstDate = thisMonth.getWeeks()[0].getDates()[i];
+					break;
+				}
+			}
+			document.getElementById("monthyear").textContent = monthList[firstDate.getMonth()] + " " + firstDate.getFullYear();
+			lastDate = thisMonth.nextMonth().getDateObject(1).deltaDays(-1);
+			showDate = 1;
+			for (var i = firstDate.getDay(); i < (firstDate.getDay() + lastDate.getDate()); i++){
+				document.getElementsByName("days")[i].textContent = showDate;
+				showDate++;
+			}
+			
+		}
+	    
+		/*This function allows a user to log in
+		 */
+		function login(){
+			var username = document.getElementById("username").value;
+			var password = document.getElementById("password").value;
+			
+			// Make a URL-encoded string for passing POST data:
+			var dataString = "username=" + encodeURIComponent(username) + "&password=" + encodeURIComponent(password);
+			
+			var xmlHttp = new XMLHttpRequest();
+			xmlHttp.open("POST", "Mod5-Login.php", true);
+			xmlHttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");        
+			xmlHttp.addEventListener("load", loginCallBack, false);
+			xmlHttp.send(dataString);
+		}
+		
+		function loginCallBack(event){
+			var jsonData = JSON.parse(event.target.responseText); // parse the JSON into a JavaScript object
+			if(jsonData.success){  // in PHP, this was the "success" key in the associative array; in JavaScript, it's the .success property of jsonData
+				alert("Action successful: " + jsonData.message);
+				var username = document.getElementById("username").value;
+				document.getElementById("pagehead").innerHTML="";
+				document.getElementById("pagehead").innerHTML="Hello " + username + ".   " + "<button id=\"logout\">Logout</button>";
+				document.getElementById("logout").addEventListener("click", logout, false);
+				userLogin = true;
+				userName = username;
+				//showEvents();
+			}else{
+				alert("Action failed due to: "+jsonData.message);
+			} // Bind the callback to the load event
+		}
+		
+		function callBack(event){
+			var jsonData = JSON.parse(event.target.responseText); // parse the JSON into a JavaScript object
+			if(jsonData.success){  // in PHP, this was the "success" key in the associative array; in JavaScript, it's the .success property of jsonData
+				alert("Action successful: " + jsonData.message);            
+			}else{
+				alert("Action failed due to: "+jsonData.message);
+			} // Bind the callback to the load event            
+		}
+	
+	    /*This function allows a user to register
+		 */
+		function register(){
+			var username = document.getElementById("username").value;
+			var password = document.getElementById("password").value;
+			var dataString = "username=" + encodeURIComponent(username) + "&password=" + encodeURIComponent(password);
+			var xmlHttp = new XMLHttpRequest();
+			xmlHttp.open("POST", "Mod5-Register.php", true);
+			xmlHttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");        
+			xmlHttp.addEventListener("load", callBack, false);
+			xmlHttp.send(dataString);
+		}
+		    
+		function logout(){
+			//alert("test logout");
+			var xmlHttp = new XMLHttpRequest();
+			xmlHttp.open("POST", "Mod5-Logout.php", true);
+			xmlHttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");        
+			xmlHttp.addEventListener("load", logoutCallBack, false);
+			xmlHttp.send(null);
+		    
+		}
+	    
+		function logoutCallBack(event) {
+			var jsonData = JSON.parse(event.target.responseText); // parse the JSON into a JavaScript object
+			if (jsonData.success){  // in PHP, this was the "success" key in the associative array; in JavaScript, it's the .success property of jsonData
+				alert("Logout Successfully.");
+				document.getElementById("pagehead").innerHTML="";
+				document.getElementById("pagehead").innerHTML = "<label for=\"username\">User Name: </label>"+
+									    "<input type=\"text\" id=\"username\" />" +
+									    "<label for=\"password\">Password: </label>"+
+									    "<input type=\"password\" id=\"password\"/>"+
+									    "<button id=\"login\">Log in</button>"+
+									    "<button id=\"register\">Register</button>";
+				document.getElementById("login").addEventListener("click", login, false);
+				document.getElementById("register").addEventListener("click", register, false);
+				cleanSelected();
+				removeContent();
+				userLogout = true;
+				userLogin = false;
+			} else {
+				aler("Logout failed.");
+			}
+		}    
+	    
+		/*
+		 *This function allows users to view their events
+		 */
+		function showEvents(day){
+			removeContent();
+			var contentParent = document.getElementById("content");
+			contentParent.setAttribute("class","content");
+			var eventDateObj = document.createElement("strong");
+			//var eventDate = day + " " + document.getElementById("monthyear").textContent;
+			var eventMonthYear = document.getElementById("monthyear").textContent.split(" ");
+			for (var i = 0; i < 12; i++){
+				if (eventMonthYear[0] == monthList[i]) {
+					var eventMonth = i + 1;
+					break;
+				}
+			}
+			var eventDate = eventMonthYear[1]+"-"+eventMonth+"-"+day;
+			globalSelectedDate = eventDate;
+			eventDateObj.appendChild(document.createTextNode("Event of Date : " + eventDate));
+			var newEventObj = document.createElement("button");
+			newEventObj.setAttribute("id","newEvent");
+			newEventObj.setAttribute("class","newEvent");
+			newEventObj.appendChild(document.createTextNode("New Event"));
+			eventDateObj.appendChild(newEventObj);
+			contentParent.appendChild(eventDateObj);
+			document.getElementById("newEvent").addEventListener("click",showAddEvent, false);
+			loadEvents(eventDate);
+						
+		}
+		
+		/*
+		 *This function allows users to view their events
+		 */
+		function loadEvents(date){
+			var dataString = "username=" + encodeURIComponent(userName) + "&date=" + encodeURIComponent(date);
+			var xmlHttp = new XMLHttpRequest();
+			xmlHttp.open("POST", "Mod5-LoadEvents.php", true);
+			xmlHttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");        
+			xmlHttp.addEventListener("load", eventCallBack, false);
+			xmlHttp.send(dataString);
+		}
+			
+		function eventCallBack() {
+			//code
+			var jsonData = JSON.parse(event.target.responseText);
+			if (jsonData.success) {
+				//code
+				var contentParent = document.getElementById("content");
+				for (var i = 0; i < jsonData.eventList.length; i++) {
+					//code
+					
+					var eventListObj = document.createElement("li");
+					eventListObj.setAttribute("id","li"+jsonData.eventList[i].eventId);
+					eventListObj.setAttribute("value",jsonData.eventList[i].eventId);
+					eventListObj.appendChild(document.createTextNode(jsonData.eventList[i].eventTime + " " + jsonData.eventList[i].eventTitle));
+					var addEditButtonObj = document.createElement("button");
+					addEditButtonObj.setAttribute("id", "edit"+jsonData.eventList[i].eventId);
+					addEditButtonObj.setAttribute("value", "li"+jsonData.eventList[i].eventId);
+					addEditButtonObj.appendChild(document.createTextNode("Edit"));
+					eventListObj.appendChild(addEditButtonObj);
+					var addDelButtonObj = document.createElement("button");
+					addDelButtonObj.setAttribute("id","del"+jsonData.eventList[i].eventId);
+					addDelButtonObj.setAttribute("value", "li"+jsonData.eventList[i].eventId);
+					addDelButtonObj.appendChild(document.createTextNode("Delete"));
+					eventListObj.appendChild(addDelButtonObj);
+					contentParent.appendChild(eventListObj);
+					//document.getElementById("edit"+jsonData.eventList[i].eventId).addEventListener("click", function(){editEvent(this)}, false);
+					document.getElementById("edit"+jsonData.eventList[i].eventId).addEventListener("click", function(){editEvent(this)}, false);
+					document.getElementById("del"+jsonData.eventList[i].eventId).addEventListener("click", function(){delEvent(this)}, false);
+
+					
+				}
+			} else{
+				var contentParent = document.getElementById("content");
+				var eventListObj = document.createElement("li");
+				eventListObj.appendChild(document.createTextNode("No Appointment."));
+				contentParent.appendChild(eventListObj);
+			}
+			
+		}
+		
+		function editEvent(targetObj) {
+			//Create the window for users to enter new information
+			document.getElementById("addEventWindow").removeAttribute("class");
+			document.getElementById("addEventWindow").innerHTML="<strong>Edit Event</strong><br>"+
+						"<label>Update Time of Schedule</label>"+
+						"<input type=\"time\" id=\"newEventTime\"/><br>"+
+						"<label>Update year<input type=\"number\" id=\"newYear\" max=\"9999\" /></label>"+
+						"<label>Update month<input type=\"number\" id=\"newMonth\" min=\"1\" max=\"12\" step=\"1\" /></label>"+
+						"<label>Update day<input type=\"number\" id=\"newDay\" min=\"1\" max=\"31\" step=\"1\" /></label><br>"+
+						"<label>Title</label>"+
+						"<textarea class=\"editWindow\" id=\"newEventTitle\"></textarea><br>"+
+						"<button id=\"modifiedEvent\">Submit</button>";
+			
+			var targetId = targetObj.value;
+			var editObj = document.getElementById(targetId);
+			var editEventId = editObj.value;
+			editEventId = Number(editEventId);
+			
+			//Modify the information stored in the database
+			document.getElementById("modifiedEvent").addEventListener("click",function(){
+				var id = editEventId;
+				var newYear = document.getElementById("newYear").value;
+				var newMonth = document.getElementById("newMonth").value;
+				var newDay = document.getElementById("newDay").value;
+				var newDate = newYear + "-" + newMonth + "-" + newDay;
+				var newEventTime = document.getElementById("newEventTime").value;
+				var newEventTitle = document.getElementById("newEventTitle").value;
+				var dataString = "id=" + encodeURIComponent(editEventId) +
+							"&newDate=" +  encodeURIComponent(newDate) +
+							"&time=" +  encodeURIComponent(newEventTime) +
+							"&title=" +  encodeURIComponent(newEventTitle);
+				var xmlHttp = new XMLHttpRequest();
+				xmlHttp.open("POST", "Mod5-EditEvents.php", true);
+				xmlHttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");        
+				xmlHttp.addEventListener("load", editEventCallBack, false);
+				xmlHttp.send(dataString);
+			},false);
+		}
+
+		function editEventCallBack() {
+			//code
+			var jsonData = JSON.parse(event.target.responseText);
+			alert(jsonData.message);
+		}
+		
+		
+		/*
+		 *Delete the associated event
+		 */
+		function delEvent(targetObj) {
+			//code
+			var targetId = targetObj.value;
+			var delObj = document.getElementById(targetId);
+			var delEventId = delObj.value;
+			delEventId = Number(delEventId);
+			var dataString = "id=" + encodeURIComponent(delEventId);
+			var xmlHttp = new XMLHttpRequest();
+			xmlHttp.open("POST", "Mod5-DeleteEvents.php", true);
+			xmlHttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");        
+			xmlHttp.addEventListener("load", delEventCallBack, false);
+			xmlHttp.send(dataString);
+		}
+		
+		function delEventCallBack(event) {
+			//code
+			var jsonData = JSON.parse(event.target.responseText);
+			if (jsonData.success) {
+				//code
+				alert(jsonData.message);
+				document.getElementById("li"+jsonData.deleteId).remove();
+			} else {
+				alert(jsonData.message);
+			}
+			
+			
+			
+		}
+		
+		function removeContent() {
+			//code
+			document.getElementById("content").removeAttribute("class");
+			document.getElementById("content").innerHTML="";
+			document.getElementById("addEventWindow").removeAttribute("class");
+			document.getElementById("addEventWindow").innerHTML="";
+		}
+		
+		function addEvent() {
+			//code
+			//alert("test add	");
+			var title = document.getElementById("newEventTitle").value;
+			var time = document.getElementById("newEventTime").value;
+			var dataString = "username=" + encodeURIComponent(userName) + "&date=" + encodeURIComponent(globalSelectedDate) + "&time=" + encodeURIComponent(time) + "&title=" + encodeURIComponent(title);
+			var xmlHttp = new XMLHttpRequest();
+			xmlHttp.open("POST", "Mod5-CreateEvents.php", true);
+			xmlHttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");        
+			xmlHttp.addEventListener("load", createEventsCallBack, false);
+			xmlHttp.send(dataString);
+		}
+		
+		function createEventsCallBack() {
+			//code
+			var jsonData = JSON.parse(event.target.responseText);
+			if (jsonData.success) {
+				//code
+				alert(jsonData.message);
+				updateCalendar();
+			} else{
+				alert(jsonData.message);
+			}
+		}
+		
+		/*
+		 *Shows thw window for user to enter information for a new event
+		 */
+		function showAddEvent(){
+			//alert("test add event");
+			var addEventObj = document.getElementById("addEventWindow");
+			addEventObj.setAttribute("class","content");
+			//var addEventHeaderObj = document.createElement("strong");
+			//addEventHeaderObj.appendChild(document.createTextNode("Add New Event"));
+			//addEventObj.appendChild(addEventHeaderObj);
+			//var inputLabelObj = document.createElement("label");
+			//inputLabelObj.appendChild(document.createTextNode("Time of Schedule"));
+			//var inputTextObj = document.createElement("input");
+			addEventObj.innerHTML="<strong>Create New Event</strong><br>"+
+						"<label>Time of Schedule</label>"+
+						"<input type=\"time\" id=\"newEventTime\"/><br>"+
+						"<label>Title</label>"+
+						"<textarea class=\"editWindow\" id=\"newEventTitle\"></textarea><br>"+
+						"<button id=\"submitNewEvent\">Submit</button>";
+			document.getElementById("submitNewEvent").addEventListener("click",addEvent,false);
+		    
+		}
+		
+		function cleanSelected() {
+			//code
+			var clearObj = document.getElementsByClassName("selected");
+			for (var i = 0; i < clearObj.length; i++){
+				clearObj[i].removeAttribute("class");
+			}
+		}
+		
+
+		
+		document.getElementById("login").addEventListener("click", login, false);
+		document.getElementById("register").addEventListener("click", register, false);
+		document.getElementById("nextmonth").addEventListener("click", function(event){
+			thisMonth = thisMonth.nextMonth(); // Previous month would be currentMonth.prevMonth()
+			updateCalendar(); // Whenever the month is updated, we'll need to re-render the calendar in HTML
+			}, false);
+		document.getElementById("prevmonth").addEventListener("click", function(event){
+			thisMonth = thisMonth.prevMonth(); // Previous month would be currentMonth.prevMonth()
+			updateCalendar(); // Whenever the month is updated, we'll need to re-render the calendar in HTML
+			}, false);
+		    
+	    
+		function clickOnTb(tb) {
+			//code
+		
+			//var clearObj = document.getElementsByClassName("selected");
+			//for (var i = 0; i < clearObj.length; i++){
+			//	clearObj[i].removeAttribute("class");
+			//}
+			cleanSelected();
+			tb.setAttribute("class","selected");
+			var day = tb.firstChild.nodeValue;
+			if (userLogin) {
+				//code
+				showEvents(day);
+			}
+		}
+		
+		var cells = document.getElementsByName("days");
+		for (var i = 0;i<cells.length;i++) {
+			//code
+			if (cells[i].firstChild != null) {
+				//code
+				cells[i].addEventListener("click",function(){clickOnTb(this)},false);
+			}
+		}
+	    
+	    
+	    
+	</script>
+	
+	</div></body>
+</html>
